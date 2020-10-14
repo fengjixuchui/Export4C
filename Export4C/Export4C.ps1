@@ -43,12 +43,8 @@ Param(
 [String]$E4C_Version = '1.0.0.0 Alpha'
 [Char[]]$HexChars = '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
 
-Function E4C_Msg_Error([String]$Msg) {
-    $host.UI.WriteErrorLine('Export4C Error: ' + $Msg)
-}
-
-Function E4C_Msg_Warning([String]$Msg) {
-    'Export4C Warning: ' + $Msg
+Function E4C_Msg_Error([Int32] $Code, [String]$Msg) {
+    $host.UI.WriteErrorLine('Export4C: fatal error EC' + $Code.ToString('D3') + ': ' + $Msg)
 }
 
 Function E4C_Str_WordBefore([String]$Text, [String]$Word) {
@@ -85,7 +81,7 @@ If (-not $NoLogo) {
 
 # Verify IntDir and append backslash if it hasn't
 If (-not (Test-Path $IntDir -PathType Container)) {
-    E4C_Msg_Error 'IntDir not exists'
+    E4C_Msg_Error -Code 1 -Msg "IntDir not exists ($($Source))"
     Exit 1
 }
 If (-not $IntDir.EndsWith('\')) {
@@ -93,7 +89,7 @@ If (-not $IntDir.EndsWith('\')) {
 }
 # Verify Source and get file name
 If (-not (Test-Path $Source -PathType Leaf)) {
-    E4C_Msg_Error 'Source not exists'
+    E4C_Msg_Error -Code 2 -Msg "Source not exists ($($Source))"
     Exit 1
 }
 [String]$FileName = $Source.Remove($Source.LastIndexOf('.')) 
@@ -106,12 +102,12 @@ If (-not (Test-Path $Source -PathType Leaf)) {
     }
 }
 If (-not $ASMListFile) {
-    E4C_Msg_Error "ASM listing file ($($FileName).asm or $($FileName).cod) not found in IntDir, make sure MSVC compiler generated ASM listing file output and whole program optimization was turned off"
+    E4C_Msg_Error -Code 3 -Msg "ASM listing file ($($FileName).asm or $($FileName).cod) not found in IntDir, make sure MSVC compiler generated ASM listing file output and whole program optimization was turned off"
     Exit 1
 }
 [String]$ObjectFile = $IntDir + $FileName + '.obj'
 If (-not (Test-Path $ObjectFile -PathType Leaf)) {
-    E4C_Msg_Error "Object file ($($ObjectFile)) not found in IntDir"
+    E4C_Msg_Error -Code 4 -Msg "Object file ($($ObjectFile)) not found in IntDir"
     Exit 1
 }
 # Catch path of new file
@@ -144,7 +140,7 @@ Get-Content -Path $Source | ForEach-Object {
 # Create new ASM source
 $null = New-Item -Path $NewASMListing -ItemType File -Force
 If (!$?) {
-    E4C_Msg_Error "Create new ASM source ($($NewASMListing)) failed"
+    E4C_Msg_Error -Code 5 -Msg "Create new ASM source ($($NewASMListing)) failed"
     Exit 1
 }
 Add-Content -Path $NewASMListing -Value ('; Rewritten by Export4C ' + $E4C_Version)
@@ -384,10 +380,10 @@ If ($MLProc.ExitCode -eq 0) {
     If ($?) {
         Exit 0
     } Else {
-        E4C_Msg_Error 'Overwrite original object file failed'
+        E4C_Msg_Error -Code 6 -Msg 'Overwrite original object file failed'
         Exit 1
     }
 } Else {
-    E4C_Msg_Error 'MASM assembling failed'
+    E4C_Msg_Error -Code 7 -Msg 'MASM assembling failed'
     Exit $MLProc.ExitCode
 }

@@ -12,7 +12,7 @@
 EXTERN_C DWORD WINAPI ExampleProc(LPVOID ThreadParameter);
 EXTERN_C VOID WINAPI ExampleProcEnd(VOID);
 // Export4C externs
-EXTERN_C LPTHREAD_START_ROUTINE E4C_Addr_ExampleProc;
+EXTERN_C LPVOID E4C_Addr_ExampleProc;
 EXTERN_C SIZE_T E4C_Size_ExampleProc;
 
 VOID PrintAddressAndSize(LPVOID FuncAddress, SIZE_T FuncSize, BOOL E4CUsed) {
